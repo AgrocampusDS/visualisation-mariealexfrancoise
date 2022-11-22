@@ -116,33 +116,43 @@ df3 <- df3[idx_country,]
 
 options(warn=-1)
 
-# Rajouter labels des groupes terroristes !
-# Mettre des rectangles de couleurs différentes tous les 10 ans
+color_chosen <- c("red","blue","yellow","gray")
 
-#color_chosen <- wesanderson::wes_palette(name = "Darjeeling1")
-color_chosen <- c("#DF0000","#2B2215","#273160","#187692")
-#838383	(131,131,131)
-#1a1a1a	(26,26,26)
-#4d1414	(77,20,20)
-#b40d0d
+data_breaks <- data.frame(start = c("1970","1990","2010"),  # Create data with breaks
+                          end = c("1980","2000","2017"),
+                          colors = c("gray90","gray90","gray90"))
 
-data_breaks <- data.frame(start = c(-Inf,"1990","2010"),  # Create data with breaks
-                          end = c("1980","2000",Inf),
-                          colors = "gray90")
+# Je définis un jeu de données pour l'évènement test
+df4 <- df3[which(df3$country=="Italy"),][c(6:14),]
 
 graph2 <- ggplot() +
   
   geom_rect(data=data_breaks,aes(xmin = start,
                                  xmax = end,
-                                 ymin = - Inf,
-                                 ymax = Inf,
-                                 fill = colors),
-            alpha = 0.5) +
+                                 ymin = 0,
+                                 ymax = 310,
+                                 fill = colors),alpha = 0.5) +
+  
+  # On fait carrément un rectangle pour l'évènement
+  # geom_rect(data=data_breaks,aes(xmin = "1975",
+  #                                xmax = "1980",
+  #                                ymin = 0,
+  #                                ymax = 310,
+  #                                fill = "lightblue"),alpha = 0.5) +
+  
+  # Ou alors on fait l'aire sous la courbe pour l'évènement
+  geom_area(data=df4, aes(x = annee, y = n, group = country, fill = "lightblue"))+
   
   geom_line(data=df3, aes(x = annee, y = n, group = country, color = country),size=1) + 
   
-  #scale_color_manual(values=color_chosen)+
-  scale_color_jco()+
+  # If we want to put label or text :
+  # https://r-graph-gallery.com/275-add-text-labels-with-ggplot2.html
+  geom_text(aes(x="1977",y=320),label="test", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="lightblue")+
+  #geom_label(aes(x="1996",y=280),label="1",  label.padding = unit(0.35, "lines"), 
+  #label.size = 0.05,color = "black",fill="red")+
+  
+  scale_color_manual(values=color_chosen)+
+  #scale_color_jco()+
   
   # then details for presentation
   xlab("Year") +
@@ -185,7 +195,7 @@ terrorism_ACM_1 <- terrorism_ACM[,c(5,12,17)]
 res.MCA<-MCA(terrorism_ACM_1,graph=FALSE)
 
 # On va sur Factoshiny
-Factoshiny(terrorism_ACM_1)
+#Factoshiny(terrorism_ACM_1)
 
 #### 1) Graphe des variables #####################
 plot_mca1 <- plot.MCA(res.MCA, choix='var',title="Variable graph",col.var=c(1,2,3))
@@ -193,11 +203,25 @@ plot_mca1
 
 
 #### 2) Deuxième graphe des variables #####################
+options(ggrepel.max.overlaps = Inf)
 plot_mca2 <-plot.MCA(res.MCA,invisible= 'ind',col.var=c(1,1,1,1,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3),title="CMA graph",cex=0.6,cex.main=0.6,cex.axis=0.6,label =c('var'))
 plot_mca2
 
-#ggplotly(fviz_mca_var(res.MCA))
-#ggplotly(plot_mca2)
+ggplotly(plot_mca2)
+
+test <- fviz_mca_var(res.MCA, labelsize = 3, repel = TRUE,col.var = c("country","country","country","country","success","success","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target"))+
+  theme(text = element_text(size = 7.5),
+        axis.title = element_text(size = 7.5),
+        axis.text = element_text(size = 7.5))
+test
+ggplotly(test)
+
+b <- fviz_mca_var(res.MCA, labelsize = 3, repel = TRUE) +
+  theme(text = element_text(size = 7.5),
+        axis.title = element_text(size = 7.5),
+        axis.text = element_text(size = 7.5))
+plotly(b)
+plotly(plot_mca2)
 
 
 #### 3) Graphe des valeurs propres #####################

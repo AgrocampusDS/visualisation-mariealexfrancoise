@@ -12,6 +12,8 @@ library(FactoMineR)
 library(egg)
 library(ggpubr)
 library(patchwork)
+library(viridis)
+library(wesanderson)
 
 
 
@@ -19,7 +21,6 @@ library(patchwork)
 ############ ---- IMPORTATION ET PRE TRAITEMENT ----------------
 
 terrorism <- read.csv("terrorism_dataset.csv",sep=";") # 181 690 observations
-#terrorism2 <- terrorism
 
 # Supprimer NA sur latitude longitude
 idx_NA_lat <- which(is.na(terrorism$latitude)==TRUE)
@@ -56,18 +57,20 @@ terrorism_eu_nonkill <- terrorism_eu[which(terrorism_eu$nkill==0),]
 # En bleu : pas de blessés
 terrorism_eu_nonwound <- terrorism_eu[which(terrorism_eu$nwound==0),]
 # En noir : NA kill
-terrorism_eu_NA_kill <- terrorism_eu[which(is.na(terrorism$nkill)==TRUE),]
+terrorism_eu_NA_kill <- terrorism[which(is.na(terrorism$nkill)==TRUE),]
+terrorism_eu_NA_kill <- terrorism_eu_NA_kill[which(terrorism_eu_NA_kill$region_txt=="Western Europe"),]
 # En gris : NA wound
-terrorism_eu_NA_wound <- terrorism_eu[which(is.na(terrorism$nwound)==TRUE),]
+terrorism_eu_NA_wound <- terrorism[which(is.na(terrorism$nwound)==TRUE),]
+terrorism_eu_NA_wound <- terrorism_eu_NA_wound[which(terrorism_eu_NA_kill$region_txt=="Western Europe"),]
 # En rouge : kill
-terrorism_eu_kill <- terrorism_eu[which(terrorism_eu$nkill>1),]
+terrorism_eu_kill <- terrorism_eu[which(terrorism_eu$nkill>=1),]
 # En jaune : blessés
-terrorism_eu_wound <- terrorism_eu[which(terrorism_eu$nwound>1),]
+terrorism_eu_wound <- terrorism_eu[which(terrorism_eu$nwound>=1),]
 
 # MAP PLOT AVEC LES POINTS SUR MAP MONDE
 
-Color_Assets <- colorFactor(c("green", "blue", "red", "black"))
-info <- as.factor(c("Pas de victimes","Des blessés","Des morts", "Pas d'informations"))
+Color_Assets <- as.factor(c("green", "blue", "red", "black"))
+info <- as.factor(c("No victim","Wounded","Fatalities", "No information"))
 
 #initialisation
 longline_map <- leaflet(terrorism_eu) %>% 
@@ -76,18 +79,18 @@ longline_map <- leaflet(terrorism_eu) %>%
 longline_map
 
 longline_map %>% addCircles(lng = terrorism_eu_nonkill$longitude, lat = terrorism_eu_nonkill$latitude, weight =(1), radius = 1,
-                            color="green", popup = paste("Nombre de morts =",terrorism_eu_nonkill$nkill," en ",terrorism_eu$iyear, " par ", terrorism_eu$attacktype1_txt)) %>%
+                            color="green", popup = paste("Number of fatalities =",terrorism_eu_nonkill$nkill," in ",terrorism_eu$iyear, " by ", terrorism_eu$attacktype1_txt)) %>%
   addCircles(lng = terrorism_eu_nonwound$longitude, lat = terrorism_eu_nonwound$latitude, weight =(1),radius = 1,
-             color="green", popup = paste("Nombre de blessés =",terrorism_eu_nonwound$nwound," en ",terrorism_eu$iyear,  " par ", terrorism_eu$attacktype1_txt)) %>%
+             color="green", popup = paste("Number of wounded =",terrorism_eu_nonwound$nwound," in ",terrorism_eu$iyear,  " by ", terrorism_eu$attacktype1_txt)) %>%
   addCircles(lng = terrorism_eu_NA_kill$longitude, lat = terrorism_eu_NA_kill$latitude, weight=(1),radius = 1,
-             color="black", popup = paste("Nombre de morts =",terrorism_eu_NA_kill$nkill," en ",terrorism_eu$iyear, " par ", terrorism_eu$attacktype1_txt)) %>%
+             color="black", popup = paste("Number of fatalities =",terrorism_eu_NA_kill$nkill," in ",terrorism_eu$iyear, " by ", terrorism_eu$attacktype1_txt)) %>%
   addCircles(lng = terrorism_eu_NA_wound$longitude, lat = terrorism_eu_NA_wound$latitude, weight=(1),radius = 1,
-             color="black", popup = paste("Nombre de blessés =",terrorism_eu_NA_wound$nwound," en ",terrorism_eu$iyear,  " par ", terrorism_eu$attacktype1_txt)) %>%
+             color="black", popup = paste("Number of wounded =",terrorism_eu_NA_wound$nwound," in ",terrorism_eu$iyear,  " by ", terrorism_eu$attacktype1_txt)) %>%
   addCircles(lng = terrorism_eu_wound$longitude, lat = terrorism_eu_wound$latitude, weight=1 ,radius = 150*terrorism_eu_wound$nwound,
-             color= "blue", fillOpacity = 0.1, popup = paste("Nombre de blessés =",terrorism_eu_wound$nwound," en ",terrorism_eu$iyear,  " par ", terrorism_eu$attacktype1_txt)) %>%
+             color= "blue", fillOpacity = 0.1, popup = paste("Number of wounded =",terrorism_eu_wound$nwound," in ",terrorism_eu$iyear,  " by ", terrorism_eu$attacktype1_txt)) %>%
   addCircles(lng = terrorism_eu_kill$longitude, lat = terrorism_eu_kill$latitude, weight=1, radius = 150*terrorism_eu_kill$nkill,
-             color="red", popup = paste("Nombre de morts =",terrorism_eu_kill$nkill," en ",terrorism_eu$iyear, " par ", terrorism_eu$attacktype1_txt))  %>%
-  addLegend("topleft", colors = palette, labels = info, title = "Attentats en Europe de l'Ouest depuis 1970", opacity = 1)
+             color="red", popup = paste("Number of fatalities =",terrorism_eu_kill$nkill," in ",terrorism_eu$iyear, " by ", terrorism_eu$attacktype1_txt))  %>%
+  addLegend("bottomleft", colors = Color_Assets, labels = info, title = "Terrorist attacks in Western Europe between 1970 and 2017", opacity = 1)
 
 
 
@@ -108,22 +111,31 @@ df3
 df2 <- as.data.frame.matrix(table(df1$annee,df1$country))
 sumjour<-colSums(df2);sumjour
 
-# Et on garde les 4 pays avec le plus d'attentats :
+# Et on garde les 4 pays avec le plus d'attentats En Europe:
 idx_country <- which((df3$country=="France")|(df3$country=="Italy")|(df3$country=="Spain")|(df3$country=="United Kingdom"))
 df3 <- df3[idx_country,] 
+
+class(df3$annee)
+df3$annee <- as.factor(df3$annee)
 
 # GGPLOT
 
 options(warn=-1)
 
-color_chosen <- c("red","blue","yellow","gray")
+color_chosen <- c("red","blue","orange","purple")
+library(scales)
+#display ggplot2 default hex color codes from 1 to 8
+for(i in 1:8){
+  print(hue_pal()(i))
+}
+# We find the defaut colors for 4 factors "#F8766D" "#7CAE00" "#00BFC4" "#C77CFF"
 
 data_breaks <- data.frame(start = c("1970","1990","2010"),  # Create data with breaks
                           end = c("1980","2000","2017"),
                           colors = c("gray90","gray90","gray90"))
 
 # Je définis un jeu de données pour l'évènement test
-df4 <- df3[which(df3$country=="Italy"),][c(6:14),]
+#df4 <- df3[which(df3$country=="Italy"),][c(6:14),]
 
 graph2 <- ggplot() +
   
@@ -132,33 +144,30 @@ graph2 <- ggplot() +
                                  ymin = 0,
                                  ymax = 310,
                                  fill = colors),alpha = 0.5) +
-  
-  # On fait carrément un rectangle pour l'évènement
-  # geom_rect(data=data_breaks,aes(xmin = "1975",
-  #                                xmax = "1980",
-  #                                ymin = 0,
-  #                                ymax = 310,
-  #                                fill = "lightblue"),alpha = 0.5) +
-  
-  # Ou alors on fait l'aire sous la courbe pour l'évènement
-  geom_area(data=df4, aes(x = annee, y = n, group = country, fill = "lightblue"))+
-  
   geom_line(data=df3, aes(x = annee, y = n, group = country, color = country),size=1) + 
+  annotate("segment", x = "1991", xend = "2002",y = 305, yend = 305,
+           arrow = arrow(ends = "both", angle = 90),colour = "#F8766D") + 
+  geom_text(aes(x="1997",y=310),label="Groupe islamiste armé", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="#F8766D")+
+  annotate("segment", x = "1972", xend = "1980",y = 315, yend = 315,
+           arrow = arrow(ends = "both", angle = 90),colour = "#7CAE00") + 
+  geom_text(aes(x="1976",y=320),label="Années de plombs", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="#7CAE00")+
+  annotate("segment", x = "1970", xend = "1998",y = 325, yend = 325,
+           arrow = arrow(ends = "both", angle = 90),colour = "#C77CFF") + 
+  geom_text(aes(x="1984",y=330),label="Les troubles, conflit nord-irlandais", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="#C77CFF")+
+  annotate("segment", x = "1970", xend = "2011",y = 335, yend = 335,
+           arrow = arrow(ends = "both", angle = 90),colour = "#00BFC4") + 
+  geom_text(aes(x="1991",y=340),label="Conflit Basque (ETA)", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="#00BFC4")+
+  annotate("segment", x = "2009", xend = "2017",y = 305, yend = 305,
+           arrow = arrow(ends = "both", angle = 90),colour = "grey30") + 
+  geom_text(aes(x="2013",y=310),label="Groupe islamiste Daesh", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="grey30")+
   
-  # If we want to put label or text :
-  # https://r-graph-gallery.com/275-add-text-labels-with-ggplot2.html
-  geom_text(aes(x="1977",y=320),label="test", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="lightblue")+
-  #geom_label(aes(x="1996",y=280),label="1",  label.padding = unit(0.35, "lines"), 
-  #label.size = 0.05,color = "black",fill="red")+
   
-  scale_color_manual(values=color_chosen)+
+  #scale_color_manual(values=color_chosen)+
   #scale_color_jco()+
   
   # then details for presentation
-  xlab("Year") +
+  labs(y = "Count of terrorist attacks",x="Year",title="Count of terrorist attacks in 4 Western Europe countries by year and country between 1970 and 2017")+
   scale_x_discrete(breaks=c("1970","1975","1980","1985","1990","1995","2000","2005","2010","2015")) +
-  ylab("Count of terrorist attacks") +
-  labs(title="Count of terrorist attacks by year and country")+
   scale_fill_identity()+
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))+
@@ -166,97 +175,46 @@ graph2 <- ggplot() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 graph2
+ggplotly(graph2)
+
 
 options(warn=0)
 
+############ ---- GRAPHE 3 : Barplot ----------------
+
+# On ne garde que les 3 variables attaques, année et pays :
+df4 <- data.frame(attaque=terrorism$eventid,cible=terrorism$targtype1_txt,country=terrorism$country_txt,region=terrorism$region_txt,mort=terrorism$nkill,blesse=terrorism$nwound)
+
+# On se concentre sur les 4 pays d'Europe
+df4 <- df4[which(df4$region=="Western Europe"),]
+
+df5 <- df4[which((df4$country=="France")|(df4$country=="Italy")|(df4$country=="Spain")|(df4$country=="United Kingdom")),]
+df5 <- df5[,2:3]
+#df6 <- cbind(count = 1, df5)
+df5$cible <- as.factor(df5$cible)
+
+df5[df5 == ""] <- "Other"
+df5[df5 == "Abortion Related"] <- "Other"
+df5[df5 == "Food or Water Supply"] <- "Other"
+df5[df5 == "Maritime"] <- "Other"
+df5[df5 == "NGO"] <- "Other"
+df5[df5 == "Unknown"] <- "Other"
+df5[df5 == "Violent Political Party"] <- "Other"
 
 
+theme_set(theme_classic())
 
-############ ---- GRAPHE 3 : ACM ----------------
-
-
-# On prend les 4 pays
-terrorism_ACM <- terrorism2
-terrorism_ACM <- terrorism_ACM[which((terrorism_ACM$country=="France")|(terrorism_ACM$country=="Italy")|(terrorism_ACM$country=="Spain")|(terrorism_ACM$country=="United Kingdom")),]
-
-# On regarde les NA dans succès et on les enlève
-idx_NA_suc <- which(is.na(terrorism_ACM$success)==TRUE)
-terrorism_ACM <- terrorism_ACM[-idx_NA_suc,]
-
-# On convertie en facteurs
-terrorism_ACM$country <- as.factor(terrorism_ACM$country)
-terrorism_ACM$success <- as.factor(terrorism_ACM$success)
-terrorism_ACM$attacktype1_txt <- as.factor(terrorism_ACM$attacktype1_txt)
-terrorism_ACM$targtype1_txt <- as.factor(terrorism_ACM$targtype1_txt)
-# terrorism_ACM$weaptype1_txt <- as.factor(terrorism_ACM$weaptype1_txt)
-
-# On choisit 3 variables pour l'ACM et on fait l'ACM
-terrorism_ACM_1 <- terrorism_ACM[,c(5,12,17)]
-res.MCA<-MCA(terrorism_ACM_1,graph=FALSE)
-
-# On va sur Factoshiny
-#Factoshiny(terrorism_ACM_1)
-
-#### 1) Graphe des variables #####################
-plot_mca1 <- plot.MCA(res.MCA, choix='var',title="Variable graph",col.var=c(1,2,3))
-plot_mca1
-
-
-#### 2) Deuxième graphe des variables #####################
-options(ggrepel.max.overlaps = Inf)
-plot_mca2 <-plot.MCA(res.MCA,invisible= 'ind',col.var=c(1,1,1,1,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3),title="CMA graph",cex=0.6,cex.main=0.6,cex.axis=0.6,label =c('var'))
-plot_mca2
-
-ggplotly(plot_mca2)
-
-test <- fviz_mca_var(res.MCA, labelsize = 3, repel = TRUE,col.var = c("country","country","country","country","success","success","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target","target"))+
-  theme(text = element_text(size = 7.5),
-        axis.title = element_text(size = 7.5),
-        axis.text = element_text(size = 7.5))
-test
-ggplotly(test)
-
-b <- fviz_mca_var(res.MCA, labelsize = 3, repel = TRUE) +
-  theme(text = element_text(size = 7.5),
-        axis.title = element_text(size = 7.5),
-        axis.text = element_text(size = 7.5))
-plotly(b)
-plotly(plot_mca2)
-
-
-#### 3) Graphe des valeurs propres #####################
-plot_mca3 <- fviz_eig(res.MCA, addlabels = TRUE, ylim = c(0, 6.5))+
-                        xlab("Percentage of explained variances") +
-                        ylab("Dimensions") + 
-                        labs(title="Eigen values")+
-                        scale_fill_identity()+
-                        theme_bw() +
-                        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-                        theme(plot.title = element_text(hjust = 0.5,size=9))
-plot_mca3
-
-
-# On vérifie si l'inertie est suffisante :
-permuteLigne <- function(v) {return(v[sample(1:length(v),replace=FALSE)])}
-nind <- nrow(terrorism_ACM_1)
-nvar <- ncol(terrorism_ACM_1)
-print(nind)
-print(nvar)
-nbsimul <- 1000
-iner <- NULL
-for (i in 1:nbsimul){
-  mat <- apply(terrorism_ACM_1,2,permuteLigne)
-  iner <- c(iner,MCA(mat,graph=F)$eig[2,3])
-}
-# calcul de l'inertie du quantile (=8.45%)
-a <- quantile(iner,0.95)
-print(a)
-# % l'inertie du jeux de donnees (=10.67%) est plus grand que le quantile 95%
-b <- res.MCA$eig[2,3]
-print(b)
-
-
-#### 4) Ensemble des graphes #####################
-
-ggarrange(plot_mca1,plot_mca2,plot_mca3,ncol=2,nrow=2) 
+# Histogram on a Categorical variable
+df5 <- within(df5, 
+              cible <- factor(cible, 
+                              levels=names(sort(table(cible), 
+                                                increasing=TRUE))))
+g <- ggplot(df5, aes(cible))
+g + geom_bar(aes(fill=country), width = 0.5) + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) +
+  coord_flip()+
+  labs(title="Histogramme du type de cibles en fonction du pays", 
+       subtitle="On compte le nombre d'attaques par cibles", y = "Number of attacks",x="Type of target") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
 

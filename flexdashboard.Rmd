@@ -3,7 +3,7 @@ title: "Terrorism characterization in West Europe between 1970 and 2017 "
 author: Marie Joigneau - Alexandre Homo - Françoise Le Moal
 output: 
   flexdashboard::flex_dashboard:
-#    logo: D:/OneDrive/ACO 3eme annee 2022-2023/visualisation de donnees heterogenes - le et #etienne/projet/visualisation-mariealexfrancoise/autocollant-tete-mort.png
+   #logo: D:/OneDrive/ACO 3eme annee 2022-2023/visualisation de donnees heterogenes - le et etienne/projet/visualisation-mariealexfrancoise/autocollant-tete-mort.png
     theme: journal
     social: menu
     source_code: embed
@@ -32,15 +32,15 @@ library(scales)
 
 ############ ---- IMPORTATION ET PRE TRAITEMENT ----------------
 
-terrorism <- read.csv("terrorism_dataset.csv",sep=";") # 181 690 observations
+terrorism <- read.csv("terrorism_dataset.csv",sep=";") # on a 181 690 observations
 
-# Supprimer NA sur latitude longitude
+# On supprime les NA sur les variables latitude longitude
 idx_NA_lat <- which(is.na(terrorism$latitude)==TRUE)
 idx_NA_lon <- which(is.na(terrorism$longitude)==TRUE)
 idx_NA <- unique(c(idx_NA_lat,idx_NA_lon))
-terrorism <- terrorism[-idx_NA,] # 177 133 observations
+terrorism <- terrorism[-idx_NA,] # on a 177 133 observations sans NA en latitude et longitude
 
-# Mettre en facteur :
+# On met ensuite en facteur les variables utiles plus tard:
 terrorism$attacktype1_txt <- as.factor(terrorism$attacktype1_txt)
 levels(terrorism$attacktype1_txt)
 terrorism$region_txt <- as.factor(terrorism$region_txt)
@@ -50,35 +50,32 @@ levels(terrorism$iyear)
 terrorism$country_txt <- as.factor(terrorism$country_txt)
 levels(terrorism$country_txt)
 
-# Garder uniquement l'Europe de l'Ouest
+# Et on garde uniquement l'Europe de l'Ouest
 idx_WE <- which(terrorism$region_txt=="Western Europe")
 length(idx_WE)
-terrorism_eu <- terrorism[idx_WE,] # 21 599 observations
+terrorism_eu <- terrorism[idx_WE,] # on a 21 599 observations en Europe de l'Ouest
 
 
 
 
-############ ---- GRAPHE 1 : MAP ----------------
+############ ---- GRAPHE 1 : CARTE (VISION SPATIALE) ----------------
 
-# Evolution du terrorisme en europe de l'est depuis 1970 et visualisation des groupes à risque aujourd'hui
+# On créé différents jeux de données pour les plots :
 
-# différents jeux de données pour les plots :
-# En vert : pas de kill
+# En vert : pas de victimes (morts et blessés)
 terrorism_eu_nonkill <- terrorism_eu[which(terrorism_eu$nkill==0),]
-# En bleu : pas de blessés
 terrorism_eu_nonwound <- terrorism_eu[which(terrorism_eu$nwound==0),]
-# En noir : NA kill
+# En noir : pas d'information
 terrorism_eu_NA_kill <- terrorism[which(is.na(terrorism$nkill)==TRUE),]
 terrorism_eu_NA_kill <- terrorism_eu_NA_kill[which(terrorism_eu_NA_kill$region_txt=="Western Europe"),]
-# En gris : NA wound
 terrorism_eu_NA_wound <- terrorism[which(is.na(terrorism$nwound)==TRUE),]
 terrorism_eu_NA_wound <- terrorism_eu_NA_wound[which(terrorism_eu_NA_kill$region_txt=="Western Europe"),]
-# En rouge : kill
+# En rouge : morts
 terrorism_eu_kill <- terrorism_eu[which(terrorism_eu$nkill>=1),]
-# En jaune : blessés
+# En bleu : blessés
 terrorism_eu_wound <- terrorism_eu[which(terrorism_eu$nwound>=1),]
 
-# Initialisation pour la carte
+# On initialise les couleurs et la légende pour la carte
 Color_Assets <- as.factor(c("green", "blue", "red", "black"))
 info <- as.factor(c("No victim","Wounded","Fatalities", "No information"))
 
@@ -86,54 +83,53 @@ info <- as.factor(c("No victim","Wounded","Fatalities", "No information"))
 
 ############ ---- GRAPHE 2 : VISION TEMPORELLE ----------------
 
-# On ne garde que les 3 variables attaques, année et pays :
+# On ne garde que les 3 variables attaques, année et pays pour ce graphe :
 df1 <- data.frame(attaque=terrorism$eventid,annee=terrorism$iyear,country=terrorism$country_txt)
 
-# On regroupe par année et pays et on compte
+# Puis on regroupe par année et pays et on compte le nombre d'attaques
 df3 <- df1%>%
   group_by(annee,country)%>%
   count(attaque)
-#df3
 
-# On fait un data frame pour voir le nombre d'attentat par pays
+# On fait un data frame pour voir le nombre d'attentat par pays ...
 df2 <- as.data.frame.matrix(table(df1$annee,df1$country))
 sumjour<-colSums(df2)#;sumjour
-
-# Et on garde les 4 pays avec le plus d'attentats En Europe:
+# ... et on garde les 4 pays avec le plus d'attentats En Europe:
 idx_country <- which((df3$country=="France")|(df3$country=="Italy")|(df3$country=="Spain")|(df3$country=="United Kingdom"))
 df3 <- df3[idx_country,] 
 
+# On remet bien en facteur l'année
 class(df3$annee)
 df3$annee <- as.factor(df3$annee)
 
 
-# We find the defaut colors for 4 factors "#F8766D" "#7CAE00" "#00BFC4" "#C77CFF"
+# Afin d'unifier les 2 derniers graphes entre eux, et avec les annotate et geom_text, on retrouve les noms des couleurs pas défaut: "#F8766D" "#7CAE00" "#00BFC4" "#C77CFF"
 color_chosen <- c("red","blue","orange","purple")
-#display ggplot2 default hex color codes from 1 to 8
 for(i in 1:8){
   print(hue_pal()(i))
 }
 
-data_breaks <- data.frame(start = c("1970","1990","2010"),  # Create data with breaks
+# On prépare les carrés gris de fond pour le graphe, un carré gris pour 10 ans, tous les 10 ans
+data_breaks <- data.frame(start = c("1970","1990","2010"),
                           end = c("1980","2000","2017"),
                           colors = c("gray90","gray90","gray90"))
 
 
 
 
-############ ---- GRAPHE 3 : Barplot ----------------
+############ ---- GRAPHE 3 : BARPLOT ----------------
 
-# On ne garde que les 3 variables attaques, année et pays :
+# On ne garde que les 3 variables attaques, type de cible, région et pays :
 df4 <- data.frame(attaque=terrorism$eventid,cible=terrorism$targtype1_txt,country=terrorism$country_txt,region=terrorism$region_txt,mort=terrorism$nkill,blesse=terrorism$nwound)
 
 # On se concentre sur les 4 pays d'Europe
 df4 <- df4[which(df4$region=="Western Europe"),]
-
 df5 <- df4[which((df4$country=="France")|(df4$country=="Italy")|(df4$country=="Spain")|(df4$country=="United Kingdom")),]
+# On ne garde que les colonnes type de cible et pays, pour le barplot :
 df5 <- df5[,2:3]
-#df6 <- cbind(count = 1, df5)
 df5$cible <- as.factor(df5$cible)
 
+# On décide de mettre les types de cible qu'on ne voit qu'une ou deux fois dans 'Other' pour des soucis de visualisation
 df5[df5 == ""] <- "Other"
 df5[df5 == "Abortion Related"] <- "Other"
 df5[df5 == "Food or Water Supply"] <- "Other"
@@ -142,7 +138,7 @@ df5[df5 == "NGO"] <- "Other"
 df5[df5 == "Unknown"] <- "Other"
 df5[df5 == "Violent Political Party"] <- "Other"
 
-# Histogram on a Categorical variable
+# On trie le data frame pour des soucis de visualisation :
 df5 <- within(df5, cible <- factor(cible, levels=names(sort(table(cible), increasing=TRUE))))
 ```
 
@@ -153,11 +149,13 @@ Localisation
 ### Terrorist attacks in Western Europe between 1970 and 2017
 
 ```{r}
-#initialisation
+# On commence par créer la carte leaflet :
+
 longline_map <- leaflet(terrorism_eu) %>% 
   setView(lng = mean(terrorism_eu$longitude), lat = mean(terrorism_eu$latitude), zoom = 4) %>% 
   addTiles()
-#longline_map
+
+# Puis on rajoute tous les cercles nécessaires ... :
 
 longline_map %>% addCircles(lng = terrorism_eu_nonkill$longitude, lat = terrorism_eu_nonkill$latitude, weight =(1), radius = 1,
                             color="green", popup = paste("Number of fatalities =",terrorism_eu_nonkill$nkill," in ",terrorism_eu$iyear, " by ", terrorism_eu$attacktype1_txt)) %>%
@@ -171,7 +169,9 @@ longline_map %>% addCircles(lng = terrorism_eu_nonkill$longitude, lat = terroris
              color= "blue", fillOpacity = 0.1, popup = paste("Number of wounded =",terrorism_eu_wound$nwound," in ",terrorism_eu$iyear,  " by ", terrorism_eu$attacktype1_txt)) %>%
   addCircles(lng = terrorism_eu_kill$longitude, lat = terrorism_eu_kill$latitude, weight=1, radius = 150*terrorism_eu_kill$nkill,
              color="red", popup = paste("Number of fatalities =",terrorism_eu_kill$nkill," in ",terrorism_eu$iyear, " by ", terrorism_eu$attacktype1_txt))  %>%
-  addLegend("bottomleft", colors = Color_Assets, labels = info, title = "Terrorist attacks in Western Europe between 1970 and 2017", opacity = 1)
+  
+  # ... ainsi que la légende :
+  addLegend("bottomleft", colors = Color_Assets, labels = info, opacity = 1)
 ```
 
 Evolution
@@ -226,14 +226,21 @@ Distribution
 ### Target type histogram depending of country
 
 ```{r}
+# On met un thème classic
 theme_set(theme_classic())
 
 g <- ggplot(df5, aes(cible))+ 
+  
+  # On choisit un geom_bar
   geom_bar(aes(fill=country), width = 0.5) + 
-  theme(axis.text.x = element_text(angle=65, vjust=0.6)) +
+  
+  # On inverse x et y pour des soucis de visualisation :
   coord_flip()+
-  labs(title="Target type histogram depending of country", 
-       subtitle="On compte le nombre d'attaques par cibles", y = "Number of attacks",x="Type of target") +
+  # On met des titres aux axes :
+  labs(y = "Number of attacks",x="Type of target") +
+  
+  # Thème et visualisation :
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) +
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
 

@@ -3,11 +3,14 @@ title: "Terrorism characterization in West Europe between 1970 and 2017 "
 author: Marie Joigneau - Alexandre Homo - Françoise Le Moal
 output: 
   flexdashboard::flex_dashboard:
-   #logo: D:/OneDrive/ACO 3eme annee 2022-2023/visualisation de donnees heterogenes - le et etienne/projet/visualisation-mariealexfrancoise/autocollant-tete-mort.png
+    logo: ./www/arme.png
     theme: journal
     social: menu
     source_code: embed
 ---
+
+
+
 
 ```{r setup, include = FALSE}
 

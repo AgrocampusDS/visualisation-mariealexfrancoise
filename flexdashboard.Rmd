@@ -187,10 +187,15 @@ graph2 <- ggplot() +
                                  ymin = 0,
                                  ymax = 310,
                                  fill = colors),alpha = 0.5) +
+  
+  
   geom_line(data=df3, aes(x = annee, y = n, group = country, color = country),size=1) + 
   annotate("segment", x = "1990", xend = "1997",y = 315, yend = 315,
            arrow = arrow(ends = "both", angle = 90),colour = "#F8766D") + 
-  geom_text(aes(x="1995",y=325),label="Islamic groups (GIA)", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="#F8766D")+
+  geom_text(aes(x="1993",y=325),label="Islamic groups (GIA)", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="#F8766D")+
+  annotate("segment", x = "1978", xend = "1996",y = 290, yend = 290,
+           arrow = arrow(ends = "both", angle = 90),colour = "#F8766D") + 
+  geom_text(aes(x="1987",y=300),label="Corsica terrorism (FLNC)", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="#F8766D")+
   annotate("segment", x = "1972", xend = "1980",y = 315, yend = 315,
            arrow = arrow(ends = "both", angle = 90),colour = "#7CAE00") + 
   geom_text(aes(x="1976",y=325),label="Years of Lead", nudge_x = 0.05, nudge_y = 0.05, check_overlap = T,col="#7CAE00")+

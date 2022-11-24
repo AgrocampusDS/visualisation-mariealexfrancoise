@@ -221,7 +221,16 @@ graph2 <- ggplot() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #graph2
-ggplotly(graph2)
+
+# on modifie la légende :
+plt <- ggplotly(graph2)
+plt$x$data[[1]]$name <- " "
+plt$x$data[[1]]$showlegend <- FALSE
+plt$x$data[[2]]$name <- "France"
+plt$x$data[[3]]$name <- "Italy"
+plt$x$data[[4]]$name <- "Spain"
+plt$x$data[[5]]$name <- "United Kingdom"
+plt
 ```
 
 Distribution

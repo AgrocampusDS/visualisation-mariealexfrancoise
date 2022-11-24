@@ -18,15 +18,11 @@ library(ggplot2)
 library(tidyverse)
 library(ggsci)
 library(leaflet)
-library(factoextra)
 library(plotly)
-library(Factoshiny)
-library(FactoMineR)
 library(egg)
 library(ggpubr)
 library(patchwork)
 library(viridis)
-library(wesanderson)
 library(scales)
 
 
@@ -224,6 +220,7 @@ graph2 <- ggplot() +
   theme(plot.title = element_text(hjust = 0.5,size=9))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+#graph2
 ggplotly(graph2)
 ```
 
@@ -251,6 +248,6 @@ g <- ggplot(df5, aes(cible))+
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-
+#g
 ggplotly(g)
 ```

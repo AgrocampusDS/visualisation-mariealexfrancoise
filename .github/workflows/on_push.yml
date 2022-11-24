@@ -13,8 +13,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Generate slides
-        run:|
+              - name: Generate slides
+        run: |
           Rscript -e "install.packages(c('ggsci','egg', 'patchwork', 'scales' ))"
           Rscript -e "rmarkdown::render('flexdashboard.Rmd', output_dir = 'build')"
       - name: GitHub Pages action

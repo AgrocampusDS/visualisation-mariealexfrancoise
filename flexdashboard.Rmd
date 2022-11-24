@@ -1,5 +1,5 @@
 ---
-title: "Terrorism characterization in West Europe between 1970 and 2017 "
+title: "Terrorism characterization in Western Europe between 1970 and 2017 "
 author: Marie Joigneau - Alexandre Homo - Françoise Le Moal
 output: 
   flexdashboard::flex_dashboard:
@@ -179,7 +179,7 @@ longline_map %>% addCircles(lng = terrorism_eu_nonkill$longitude, lat = terroris
 Evolution
 =======================================================================
 
-### Count of terrorist attacks in 4 Western Europe countries by year and country between 1970 and 2017
+### Count of terrorist attacks in 4 Western Europe countries between 1970 and 2017
 
 ```{r}
 graph2 <- ggplot() +
